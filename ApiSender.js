@@ -1,6 +1,7 @@
 require('dotenv').config()
 //.env file exists for configuration of environment variables
 const express = require('express');
+const utf8 = require('utf8');
 const app = express()
 //use express on nodejs
 const port = process.env.WEB_PORT;
@@ -24,12 +25,28 @@ app.use(bodyParser.urlencoded({
 
 app.use(bodyParser.json())
 
-connection.connect()
+const createConn = function(){
+    connection.connect(function(error){
+        if(error){
+            console.log('connecting error: <span class="subst">${error}</span>');
+            setTimeout(createConn,2000);
+        }
+    });
+    conn.on('error', (error)=>{
+        if(error.code == 'PROTOCOL_CONNECTION_LOST'){
+            return createConn();
+        }
+
+        throw error;
+    });
+}
 
 app.get('/:levelid', function(req,res){
     connection.query("SELECT * FROM levels WHERE id = " + req.params.levelid, function(err, result){
         console.log(req.params.levelid)
-        res.send(result)
+        //console.log(JSON.parse(JSON.stringify(result)));
+        //res.send(JSON.parse(JSON.stringify(result)))
+        res.send(result);
     })
 })
 
@@ -38,18 +55,26 @@ app.get('/', (req,res)=>{
     connection.query("SELECT * FROM levels", function(err,fields){
         if(!err){
             res.send(fields);
+
         }
     })
 })
 
 app.post('/',function(req,res){
     //var levelname=req.body.name
-    connection.query("INSERT INTO `levels` (id, name, imageurl, leveltext, highscore) VALUES('" + req.body.id + "', '" + req.body.name + "', '" + req.body.imageurl + "','" + req.body.leveltext + "', '" + req.body.highscore +"' )")
-
+    connection.query("INSERT INTO `levels` (name, imageurl, leveltext, highscore) VALUES('" + req.body.name + "', '" + req.body.imageurl + "','" + req.body.leveltext + "', '" + req.body.highscore +"' )")
     res.json({
         id : req.body.id,
         name : req.body.name
     })
+    console.log(req.body);
+})
+
+app.put('/:levelid', function(req,res){
+    connection.query("UPDATE `levels` SET `highscore` = '" + req.body.highscore + "' WHERE `id` = '" + req.params.levelid + "';", function(err, result){
+        res.send(result);
+    })
+    //console.log(utf8.decode(req.body))
 })
 
 app.listen(port, ()=> console.log(`Example app listening on port ${port}!`))
