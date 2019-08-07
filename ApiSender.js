@@ -32,20 +32,19 @@ const createConn = function(){
             setTimeout(createConn,2000);
         }
     });
-    conn.on('error', (error)=>{
+    connection.on('error', (error)=>{
         if(error.code == 'PROTOCOL_CONNECTION_LOST'){
             return createConn();
         }
-
         throw error;
     });
 }
 
+createConn();
+
 app.get('/:levelid', function(req,res){
     connection.query("SELECT * FROM levels WHERE id = " + req.params.levelid, function(err, result){
         console.log(req.params.levelid)
-        //console.log(JSON.parse(JSON.stringify(result)));
-        //res.send(JSON.parse(JSON.stringify(result)))
         res.send(result);
     })
 })
@@ -55,13 +54,11 @@ app.get('/', (req,res)=>{
     connection.query("SELECT * FROM levels", function(err,fields){
         if(!err){
             res.send(fields);
-
         }
     })
 })
 
 app.post('/',function(req,res){
-    //var levelname=req.body.name
     connection.query("INSERT INTO `levels` (name, imageurl, leveltext, highscore) VALUES('" + req.body.name + "', '" + req.body.imageurl + "','" + req.body.leveltext + "', '" + req.body.highscore +"' )")
     res.json({
         id : req.body.id,
@@ -74,7 +71,5 @@ app.put('/:levelid', function(req,res){
     connection.query("UPDATE `levels` SET `highscore` = '" + req.body.highscore + "' WHERE `id` = '" + req.params.levelid + "';", function(err, result){
         res.send(result);
     })
-    //console.log(utf8.decode(req.body))
 })
 
-app.listen(port, ()=> console.log(`Example app listening on port ${port}!`))
