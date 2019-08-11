@@ -33,53 +33,67 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json())
 
 const createConn = function(){
+    connection = mysql.createConnection(config)
     connection.connect(function(error){
         if(error){
-            console.log('connecting error: <span class="subst">${error}</span>');
-            setTimeout(function(){
-                connection = mysql.createConnection(config)
-                createConn();
-            },2000);
+            console.log('connection connect error!')
         }
     });
-    connection.on('error', (error)=>{
-        if(error.code == 'PROTOCOL_CONNECTION_LOST'){
-            return createConn();
+}
+
+const destroyConn = function(){
+    connection.end(function(error){
+        if(error){
+            console.log('connection ending error!')
         }
-        throw error;
-    });
+    })
 }
 
 createConn();
 
 app.get('/:levelid', function(req,res){
+    createConn()
     connection.query("SELECT * FROM levels WHERE id = " + req.params.levelid, function(err, result){
         console.log(req.params.levelid)
         res.send(result);
+        destroyConn()
     })
 })
 
 app.get('/', (req,res)=>{
+    createConn()
     console.log(req.body.id)
     connection.query("SELECT * FROM levels", function(err,fields){
         if(!err){
             res.send(fields);
+
+        destroyConn()
         }
     })
 })
 
 app.post('/',function(req,res){
-    connection.query("INSERT INTO `levels` (name, imageurl, leveltext, highscore) VALUES('" + req.body.name + "', '" + req.body.imageurl + "','" + req.body.leveltext + "', '" + req.body.highscore +"' )")
+    createConn()
+    //var levelname=req.body.name
+    connection.query("INSERT INTO `levels` (name, imageurl, leveltext, highscore) VALUES('" + req.body.name + "', '" + req.body.imageurl + "','" + req.body.leveltext + "', '" + req.body.highscore +"' )", function(err,result){
+        console.log(req.body);
+        res.end()
+        destroyConn()
+    })
     res.json({
         id : req.body.id,
         name : req.body.name
     })
-    console.log(req.body);
 })
 
 app.put('/:levelid', function(req,res){
+    createConn()
     connection.query("UPDATE `levels` SET `highscore` = '" + req.body.highscore + "' WHERE `id` = '" + req.params.levelid + "';", function(err, result){
         res.send(result);
+        destroyConn()
     })
+    //console.log(utf8.decode(req.body))
 })
+
+app.listen(8081).on('error', console.log)
 
