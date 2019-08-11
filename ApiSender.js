@@ -8,6 +8,13 @@ const port = process.env.WEB_PORT;
 //variable value not given directly but from a env variable source
 
 var mysql = require('mysql')
+var config = {
+    host        : process.env.HOST,
+    user        : process.env.DATABASE_USER,
+    password    : process.env.PASSWORD,
+    database    : process.env.DATABASE,
+    port        : process.env.DATABASE_PORT
+}
 var connection = mysql.createConnection({
     host        : process.env.HOST,
     user        : process.env.DATABASE_USER,
@@ -29,7 +36,10 @@ const createConn = function(){
     connection.connect(function(error){
         if(error){
             console.log('connecting error: <span class="subst">${error}</span>');
-            setTimeout(createConn,2000);
+            setTimeout(function(){
+                connection = mysql.createConnection(config)
+                createConn();
+            },2000);
         }
     });
     connection.on('error', (error)=>{
