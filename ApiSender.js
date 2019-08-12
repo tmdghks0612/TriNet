@@ -15,14 +15,6 @@ var config = {
     database    : process.env.DATABASE,
     port        : process.env.DATABASE_PORT
 }
-var connection = mysql.createConnection({
-    host        : process.env.HOST,
-    user        : process.env.DATABASE_USER,
-    password    : process.env.PASSWORD,
-    database    : process.env.DATABASE,
-    port        : process.env.DATABASE_PORT
-}
-);
 
 var bodyParser = require('body-parser')
 
@@ -52,48 +44,82 @@ const destroyConn = function(){
 createConn();
 
 app.get('/:levelid', function(req,res){
-    createConn()
-    connection.query("SELECT * FROM levels WHERE id = " + req.params.levelid, function(err, result){
-        console.log(req.params.levelid)
-        res.send(result);
-        destroyConn()
+    var connection = mysql.createConnection(config)
+    connection.connect(function(error){
+        if(error){
+            console.log('connection connect lost during Get request!')
+        }
+        else{
+            connection.query("SELECT * FROM levels WHERE id = " + req.params.levelid, function(err, result){
+                console.log(req.params.levelid)
+                res.send(result)
+                connection.end(function(error){
+                    if(error){
+                        console.log('connection end lost during Get request!')
+                    }
+                })
+            })
+        }
     })
 })
 
 app.get('/', (req,res)=>{
-    createConn()
-    console.log(req.body.id)
-    connection.query("SELECT * FROM levels", function(err,fields){
-        if(!err){
-            res.send(fields);
-
-        destroyConn()
+    var connection = mysql.createConnection(config)
+    connection.connect(function(error){
+        if(error){
+            console.log('connection connect lost during GetID request!')
+        }
+        else{
+            console.log(req.body.id)
+            connection.query("SELECT * FROM levels", function(err,fields){
+                res.send(fields);
+                connection.end(function(error){
+                    if(error){
+                        console.log('connection end lost during GetID request!')
+                    }
+                })
+            })
         }
     })
 })
 
 app.post('/',function(req,res){
-    createConn()
     //var levelname=req.body.name
-    connection.query("INSERT INTO `levels` (name, imageurl, leveltext, highscore) VALUES('" + req.body.name + "', '" + req.body.imageurl + "','" + req.body.leveltext + "', '" + req.body.highscore +"' )", function(err,result){
-        console.log(req.body);
-        res.end()
-        destroyConn()
-    })
-    res.json({
-        id : req.body.id,
-        name : req.body.name
+    var connection = mysql.createConnection(config)
+    connection.connect(function(error){
+        if(error){
+            console.log('connection connect lost during Post request!')
+        }
+        else{
+            connection.query("INSERT INTO `levels` (name, imageurl, leveltext, highscore) VALUES('" + req.body.name + "', '" + req.body.imageurl + "','" + req.body.leveltext + "', '" + req.body.highscore +"' )", function(err,result){
+                console.log(req.body)
+                connection.end(function(error){
+                    if(error){
+                        console.log('connection end lost during Post request!')
+                    }
+                })
+            })
+        }
     })
 })
 
 app.put('/:levelid', function(req,res){
-    createConn()
-    connection.query("UPDATE `levels` SET `highscore` = '" + req.body.highscore + "' WHERE `id` = '" + req.params.levelid + "';", function(err, result){
-        res.send(result);
-        destroyConn()
+    var connection = mysql.createConnection(config)
+    connection.connect(function(error){
+        if(error){
+            console.log('connection connect lost during Put request!')
+        }
+        else{
+            connection.query("UPDATE `levels` SET `highscore` = '" + req.body.highscore + "' WHERE `id` = '" + req.params.levelid + "';", function(err, result){
+                res.send(result);
+                connection.end(function(error){
+                    if(error){
+                        console.log('connection end lost during Post request!')
+                    }
+                })
+            })
+        }
     })
-    //console.log(utf8.decode(req.body))
 })
 
 app.listen(8081).on('error', console.log)
-
